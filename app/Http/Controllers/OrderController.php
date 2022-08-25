@@ -38,9 +38,22 @@ class OrderController extends Controller
              
                return $item;
           });
-     
+          
           $order->orderItems()->createMany($items);
 
+          // midtrans get snap
+          $transationDetails = [
+               'order_id' => $order->order_id,
+               'gross_ammount' => $order->total
+          ];
+          $midtransParams = [
+               'transaction_details' => $transationDetails,
+               'item_details' => [],
+               'customer_detail' => [],
+          ];
+
+          $midtransSnapUrl = $this->getMidtransSnapUrl($midtransParams);
+          dd($midtransSnapUrl);
           $msg = 'Order was succefully created';
           DB::commit();
           return Formater::success($order, $msg);
@@ -75,7 +88,7 @@ class OrderController extends Controller
           \Midtrans\Config::$isProduction = (bool) env('MIDTRANS_PRODUCTION');
           \Midtrans\Config::$is3ds = (bool) env('MIDTRANS_3DS');
 
-          $snapUrl = \Midrans\Snap::createTransaction($param)->redirect_url;
+          $snapUrl = \Midtrans\Snap::createTransaction($param)->redirect_url;
 
      return $snapUrl;
     }
