@@ -18,9 +18,9 @@ class CreateOrdersTable extends Migration
             $table->integer('user_id');
             $table->string('order_number');
             $table->string('order_date');
-            $table->string('metadata');
+            $table->json('metadata')->nullable();
             $table->integer('qty');
-            $table->string('snap_url');
+            $table->string('snap_url')->nullable();
             $table->enum("status",['open','prosess','pending','close']);
             $table->string('payment')->default('midtrans');
             $table->integer('total');

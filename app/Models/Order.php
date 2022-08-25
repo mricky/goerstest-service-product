@@ -24,7 +24,8 @@ class Order extends Model
 
     protected $cast = [
         'created_at' => 'datetime:Y-m-d H:m:s',
-        'updated_at' => 'datetime:Y-m-d H:m:s'
+        'updated_at' => 'datetime:Y-m-d H:m:s',
+        'metadata' => 'array',
     ];
 
     public function orderItems(){

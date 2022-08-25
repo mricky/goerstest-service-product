@@ -69,6 +69,17 @@ class OrderController extends Controller
        }
     }
 
+
+    public function getMidtransSnapUrl($param){
+          \Midtrans\Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+          \Midtrans\Config::$isProduction = (bool) env('MIDTRANS_PRODUCTION');
+          \Midtrans\Config::$is3ds = (bool) env('MIDTRANS_3DS');
+
+          $snapUrl = \Midrans\Snap::createTransaction($param)->redirect_url;
+
+     return $snapUrl;
+    }
+
     public function index(Request $request){
         die('index');
     }

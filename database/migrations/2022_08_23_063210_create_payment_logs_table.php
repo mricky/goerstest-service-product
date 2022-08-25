@@ -15,6 +15,10 @@ class CreatePaymentLogsTable extends Migration
     {
         Schema::create('payment_logs', function (Blueprint $table) {
             $table->id();
+            $table->string('status');
+            $table->string('payment_type');
+            $table->string('order_id');
+            $table->json('raw_response');
             $table->timestamps();
         });
     }
