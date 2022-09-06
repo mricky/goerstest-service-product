@@ -4,17 +4,20 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Helpers\Formater;
+use App\Jobs\OrderCreatedJob;
+use App\Libraries\UserLibrary;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use PhpParser\Node\Stmt\Catch_;
-use Illuminate\Support\Str;
+
+use App\Http\Resources\OrderResource;
+
 class OrderController extends Controller
 {
    
     public function store(Request $request){
        
-     $data = $request->only('order_date','user_id','order_number','total');
+     $data = $request->only('order_date','user_id','total');
      
        $validator = Validator::make($data,[
             'order_date' => 'required|date',
@@ -26,6 +29,7 @@ class OrderController extends Controller
        ]);
 
        try {
+          
           DB::beginTransaction();
           $order = Order::create($data);
     
@@ -34,6 +38,7 @@ class OrderController extends Controller
             
                $item['order_id'] = $order->id;
                $item['product_id']  = $item['product_id'];
+               $item['price'] = $item['price'];
                $item['qty'] = $item['qty'];
              
                return $item;
@@ -43,20 +48,48 @@ class OrderController extends Controller
 
           // midtrans get snap
           $transationDetails = [
-               'order_id' => $order->order_id,
-               'gross_ammount' => $order->total
-          ];
-          $midtransParams = [
-               'transaction_details' => $transationDetails,
-               'item_details' => [],
-               'customer_detail' => [],
+               'order_id' => $order->id,
+               'gross_ammount' => $request->input('total')
           ];
 
-          $midtransSnapUrl = $this->getMidtransSnapUrl($midtransParams);
-          dd($midtransSnapUrl);
+          
+          $id =  $request->input('user_id');
+
+          $user= UserLibrary::response('get','users/'.$id,null);
+
+          // Just Dummy sample transaction
+          $itemDetails = [
+           [
+                  'id' =>  1,
+                  'name' => $user->data->Name,
+                  'price' => 50000,
+                  'quantity' => 1
+           ],
+           
+          ];
+
+          $customerDetail = [
+               'first_name' => $user->data->Name,
+               'email' => $user->data->Email,
+          ];
+          $midtransParams = [
+              'transaction_details' => $transationDetails,
+              'item_details' => $itemDetails,
+              'customer_detail' => $customerDetail,
+          ];
+
+         
+          $midtransSnapUrl = getMidtransSnapUrl($midtransParams);
+       
+          $order->snap_url = $midtransSnapUrl;
+          $order->save();
+
+
+          dispatch(new OrderCreatedJob($midtransParams)); // sent to queue email
+
           $msg = 'Order was succefully created';
           DB::commit();
-          return Formater::success($order, $msg);
+          return Formater::success(new OrderResource($order), $msg);
        } Catch(\Exception $e) {
          
           DB::rollBack();
@@ -82,16 +115,6 @@ class OrderController extends Controller
        }
     }
 
-
-    public function getMidtransSnapUrl($param){
-          \Midtrans\Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-          \Midtrans\Config::$isProduction = (bool) env('MIDTRANS_PRODUCTION');
-          \Midtrans\Config::$is3ds = (bool) env('MIDTRANS_3DS');
-
-          $snapUrl = \Midtrans\Snap::createTransaction($param)->redirect_url;
-
-     return $snapUrl;
-    }
 
     public function index(Request $request){
         die('index');

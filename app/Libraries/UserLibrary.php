@@ -7,7 +7,7 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
 class UserLibrary
 {
-    protected static $raesponse = [
+    protected static $response = [
         'success' => false,
         'message' => null,
         'data' => null,
